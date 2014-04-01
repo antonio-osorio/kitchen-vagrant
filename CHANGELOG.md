@@ -1,3 +1,38 @@
+## 0.14.0 / 2013-12-09
+
+### New features
+
+* Add `config[:vm_hostname]` to set config.vm.hostname in Vagrantfile. ([@fnichol][])
+
+### Improvments
+
+* Add `config[:guest]` documentation in README. ([@fnichol][])
+
+
+## 0.13.0 / 2013-12-04
+
+### New features
+
+* Use Opscode's new buckets for Virtual machines, allowing for downloads of VirtualBox and VMware Fusion/Workstation Bento boxes (Vagrant minimal base boxes). ([@sethvargo][])
+
+
+## 0.12.0 / 2013-11-29
+
+### Breaking changes
+
+* Remove `use_vagrant_provision` configuration option.
+
+### New features
+
+* Major refactor of Vagrantfile generation, to use an ERB template. For more details please consult the `vagrantfile_erb` section of the README. ([@fnichol][])
+* Add `pre_create_command` option to run optional setup such as Bindler. ([@fnichol][])
+
+### Improvments
+
+* Pull request [#56][]: Enabled passing options to the synced folders. ([@antonio-osorio][])
+* Pull request [#55][]: Fix README badges. ([@arangamani][])
+
+
 ## 0.11.3 / 2013-11-09
 
 ### Bug fixes
@@ -134,8 +169,12 @@ The initial release.
 [#31]: https://github.com/opscode/kitchen-vagrant/issues/31
 [#34]: https://github.com/opscode/kitchen-vagrant/issues/34
 [#36]: https://github.com/opscode/kitchen-vagrant/issues/36
+[#55]: https://github.com/opscode/kitchen-vagrant/issues/55
+[#56]: https://github.com/opscode/kitchen-vagrant/issues/56
 [@TheDude05]: https://github.com/TheDude05
 [@albertsj1]: https://github.com/albertsj1
+[@antonio-osorio]: https://github.com/antonio-osorio
+[@arangamani]: https://github.com/arangamani
 [@dje]: https://github.com/dje
 [@fnichol]: https://github.com/fnichol
 [@fujin]: https://github.com/fujin

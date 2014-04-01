@@ -1,13 +1,13 @@
 # <a name="title"></a> Kitchen::Vagrant
 
-[![Build Status](https://travis-ci.org/schrodinger/kitchen-vagrant.png)](https://travis-ci.org/schrodinger/kitchen-vagrant)
-[![Code Climate](https://codeclimate.com/github/schrodinger/kitchen-vagrant.png)](https://codeclimate.com/schrodinger/opscode/kitchen-vagrant)
+[![Build Status](https://travis-ci.org/test-kitchen/kitchen-vagrant.png)](https://travis-ci.org/test-kitchen/kitchen-vagrant)
+[![Code Climate](https://codeclimate.com/github/test-kitchen/kitchen-vagrant.png)](https://codeclimate.com/github/test-kitchen/kitchen-vagrant)
 
 A Test Kitchen Driver for Vagrant.
 
 This driver works by generating a single Vagrantfile for each instance in a
 sandboxed directory. Since the Vagrantfile is written out on disk, Vagrant
-needs absolutely no knowledge of Test Kitchen. So no Vagrant plugin gem is
+needs absolutely no knowledge of Test Kitchen. So no Vagrant plugins are
 required.
 
 ## <a name="requirements"></a> Requirements
@@ -51,7 +51,8 @@ Please read the [Driver usage][driver_usage] page for more details.
 ## <a name="default-config"></a> Default Configuration
 
 This driver can predict the Vagrant box name and download URL for a select
-number of platforms that have been published by Opscode, such as:
+number of platforms (VirtualBox provider only) that have been published by
+Opscode, such as:
 
 ```ruby
 ---
@@ -93,7 +94,9 @@ platforms:
 details, please read the Vagrant [machine settings][vagrant_machine_settings]
 page.
 
-There is **no** default value set.
+The default will be computed from the platform name of the instance. For
+example, a platform called "fuzzypants-9.000" will produce a default `box`
+value of `"opscode-fuzzypants-9.000"`.
 
 ### <a name="config-box-url"></a> box\_url
 
@@ -101,7 +104,7 @@ The URL that the configured box can be found at. If the box is not installed on
 the system, it will be retrieved from this URL when the virtual machine is
 started.
 
-There is **no** default value set.
+The default will be computed from the platform name of the instance.
 
 ### <a name="config-provider"></a> provider
 
@@ -152,6 +155,15 @@ commands will be displayed rather than executed.
 
 The default is unset, or `nil`.
 
+### <a name="config-guest"></a> guest
+
+Set the `config.vm.guest` setting in the default Vagrantfile. For more details
+please read the
+[config.vm.guest](http://docs.vagrantup.com/v2/vagrantfile/machine_settings.html)
+section of the Vagrant documentation.
+
+The default is unset, or `nil`.
+
 ### <a name="config-network"></a> network
 
 An **Array** of network customizations for the virtual machine. Each Array
@@ -179,15 +191,25 @@ end
 Please read the Vagrant [networking basic usage][vagrant_networking] page for
 more details.
 
-There is **no** default value set.
+The default is an empty Array, `[]`.
 
-### <a name="config-use-vagrant-provision"></a> use_vagrant_provision
+### <a name="config-pre-create-command"></a> pre\_create\_command
 
-Determines whether or not this driver will use a `vagrant provision` shell out
-in the **converge** action. If this value is falsey (`nil`, `false`) the
-behavior from `Kitchen::Driver::SSHBase` will be used, bypassing the Vagrant
-Chef solo provisioner. If this value is truthy, a `vagrant provision` will
-be used.
+An optional hoook to run a command immediately prior to the
+`vagrant up --no-provisioner` command being executed.
+
+There is an optional token, `{{vagrant_root}}` that can be used in the
+`pre_create_command` string which will be expanded by the driver to be the full
+path to the sandboxed Vagrant root directory containing the Vagrantfile. This
+command will be executed from the directory containing the .kitchen.yml file,
+or the `kitchen_root`.
+
+For example, if your project requires
+[Bindler](https://github.com/fgrehm/bindler), this command could be:
+
+```
+pre_create_command: cp .vagrant_plugins.json {{vagrant_root}}/ && vagrant plugin bundle
+```
 
 The default is unset, or `nil`.
 
@@ -215,22 +237,6 @@ Vagrant.configure("2") do |config|
 end
 ```
 
-### <a name="config-require-chef-omnibus"></a> require\_chef\_omnibus
-
-Determines whether or not a Chef [Omnibus package][chef_omnibus_dl] will be
-installed. There are several different behaviors available:
-
-* `true` - the latest release will be installed. Subsequent converges
-  will skip re-installing if chef is present.
-* `latest` - the latest release will be installed. Subsequent converges
-  will always re-install even if chef is present.
-* `<VERSION_STRING>` (ex: `10.24.0`) - the desired version string will
-  be passed the the install.sh script. Subsequent converges will skip if
-  the installed version and the desired version match.
-* `false` or `nil` - no chef is installed.
-
-The default value is unset, or `nil`.
-
 ### <a name="config-username"></a> username
 
 This is the username used for SSH authentication if you
@@ -238,6 +244,37 @@ would like to connect with a different account than Vagrant default user.
 
 If this value is nil, then Vagrant parameter `config.ssh.default.username`
 will be used (which is usually set to 'vagrant').
+
+### <a name="config-vagrantfile-erb"></a> vagrantfile\_erb
+
+An alternamte Vagrantfile ERB template that will be rendered for use by this
+driver. The binding context for the ERB processing is that of the Driver
+object, which means that methods like `config[:kitchen_root]`, `instance.name`,
+and `instance.provisioner[:run_list]` can be used to compose a custom
+Vagrantfile if necessary.
+
+**Warning:** Be cautious when going down this road as your setup may cease to
+be portable or applicable to other Test Kitchen Drivers such as Ec2 or Docker.
+Using the alternative Vagrantfile template strategy may be a dangerous
+road--be aware.
+
+The default is to use a template which ships with this gem.
+
+### <a name="config-vm-hostname"></a> vm\_hostname
+
+Sets the internal hostname for the instance. This is not used when connecting
+to the Vagrant virtual machine.
+
+For more details on this setting please read the
+[config.vm.hostname](http://docs.vagrantup.com/v2/vagrantfile/machine_settings.html)
+section of the Vagrant documentation.
+
+To prevent this value from being rendered in the default Vagrantfile, you can
+set this value to `false`.
+
+The default will be computed from the name of the instance. For
+example, the instance was called "default-fuzz-9" will produce a default
+`vm_hostname` value of `"default-fuzz-9.vagrantup.com"`.
 
 ### <a name="config-ssh-key"></a> ssh\_key
 
@@ -280,7 +317,6 @@ Apache 2.0 (see [LICENSE][license])
 [license]:          https://github.com/opscode/kitchen-vagrant/blob/master/LICENSE
 [repo]:             https://github.com/opscode/kitchen-vagrant
 [driver_usage]:     http://docs.kitchen-ci.org/drivers/usage
-[chef_omnibus_dl]:  http://www.opscode.com/chef/install/
 
 [vagrant_dl]:               http://downloads.vagrantup.com/
 [vagrant_machine_settings]: http://docs.vagrantup.com/v2/vagrantfile/machine_settings.html
